@@ -1,0 +1,75 @@
+# name: Upload to S3, Run npm audit, Save Report, and Deploy to EC2
+
+# on:
+#   push:
+#     branches:
+#       - main
+
+# jobs:
+#   build_and_deploy:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v3
+
+#       - name: Configure AWS credentials
+#         uses: aws-actions/configure-aws-credentials@v3
+#         with:
+#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+#           aws-region: ${{ secrets.AWS_REGION }}
+
+#       - name: Set up Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: '20'
+
+#       - name: Install dependencies
+#         working-directory: ./bank_app/site
+#         run: npm install
+        
+
+#       - name: Run npm audit
+#         working-directory: ./bank_app/site
+#         run: npm audit --audit-level=moderate --json > npm-audit-report.json
+        
+
+#       - name: Upload npm audit report
+#         uses: actions/upload-artifact@v2
+#         with:
+#           name: npm-audit-report
+#           path: ./bank_app/site/npm-audit-report.json
+
+#       - name: Sync repository to S3
+#         run: |
+#           aws s3 sync . s3://s3dsocloudtest/deployment/
+
+#       - name: Get EC2 instance public IP
+#         id: get_ip
+#         run: |
+#           INSTANCE_ID="i-072c5826b19c3d4b9"
+#           PUBLIC_IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --output text --query 'Reservations[0].Instances[0].PublicIpAddress')
+#           echo "::set-output name=public_ip::$PUBLIC_IP"
+
+#       - name: Start SSH Agent
+#         uses: webfactory/ssh-agent@v0.5.3
+#         with:
+#           ssh-private-key: ${{ secrets.EC2_PRIVATE_KEY }}
+
+#       - name: SSH and deploy
+#         run: |
+#           ssh -o StrictHostKeyChecking=no ec2-user@${{ steps.get_ip.outputs.public_ip }} << EOF
+#             mkdir -p /home/ec2-user/.aws
+#             echo "[default]" > /home/ec2-user/.aws/credentials
+#             echo "aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID }}" >> /home/ec2-user/.aws/credentials
+#             echo "aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> /home/ec2-user/.aws/credentials
+#             echo "aws_session_token=${{ secrets.AWS_SESSION_TOKEN }}" >> /home/ec2-user/.aws/credentials
+#             echo "[default]" > /home/ec2-user/.aws/config
+#             echo "region=${{ secrets.AWS_REGION }}" >> /home/ec2-user/.aws/config
+#             aws s3 sync s3://s3dsocloudtest/deployment/ /home/ec2-user/deployment/
+#             cd /home/ec2-user/deployment/
+#             sudo docker-compose down
+#             sudo docker-compose up -d --build
+#           EOF

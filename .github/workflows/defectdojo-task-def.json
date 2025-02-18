@@ -1,0 +1,25 @@
+{
+    "family": "defectdojo-task",
+    "containerDefinitions": [
+        {
+            "name": "defectdojo",
+            "image": "defectdojo/defectdojo-django:latest",
+            "memory": 1024,
+            "cpu": 512,
+            "portMappings": [
+                {
+                    "containerPort": 8080,
+                    "hostPort": 8080
+                }
+            ],
+            "environment": [
+                { "name": "DD_DATABASE_URL", "value": "postgres://defectdojo:password@db:5432/defectdojo" }
+            ]
+        }
+    ],
+    "networkMode": "awsvpc",
+    "requiresCompatibilities": ["FARGATE"],
+    "executionRoleArn": "arn:aws:iam::YOUR_AWS_ACCOUNT_ID:role/ecsTaskExecutionRole",
+    "cpu": "512",
+    "memory": "1024"
+}

@@ -1,0 +1,60 @@
+# name: ECS Deployment
+
+# on:
+#   workflow_run:
+#     workflows: ["Build and Push Docker Images to ECR"]   # This must match the name of your deployment workflow (deployment.yml)
+#     types:
+#       - completed
+
+# permissions:
+#   id-token: write   # Allows the workflow to request an OIDC token for AWS role assumption
+#   contents: read    # Allows read access to the repository contents
+
+# jobs:
+#   ecs_deployment:
+#     # Only run if the Deployment workflow completed successfully
+#     if: ${{ github.event.workflow_run.conclusion == 'success' }}
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v3
+
+#       - name: Configure AWS Credentials
+#         uses: aws-actions/configure-aws-credentials@v4
+#         with:
+#           role-to-assume: arn:aws:iam::049789986873:role/github-role
+#           aws-region: us-east-1
+
+#       - name: Run ECS Task and Get Public IP
+#         id: run_ecs
+#         run: |
+#           set -e
+#           echo "Running ECS Task..."
+#           TASK_JSON=$(aws ecs run-task \
+#             --cluster github-cloud-newlab \
+#             --launch-type FARGATE \
+#             --task-definition my-app-task:1 \
+#             --network-configuration "awsvpcConfiguration={subnets=[subnet-090dc98e525d9165a],securityGroups=[sg-0a6a475d4bec5d17a],assignPublicIp=ENABLED}" )
+#           echo "Run-task output:"
+#           echo "$TASK_JSON"
+
+#           # Extract the Task ARN from the output JSON
+#           TASK_ARN=$(echo "$TASK_JSON" | jq -r '.tasks[0].taskArn')
+#           echo "Task ARN: $TASK_ARN"
+
+#           # Wait for the task to start running
+#           echo "Waiting for task to start..."
+#           sleep 15
+
+#           # Describe the task to get its networking details
+#           TASK_DETAILS=$(aws ecs describe-tasks --cluster github-cloud-newlab --tasks "$TASK_ARN")
+#           echo "Task details:"
+#           echo "$TASK_DETAILS"
+
+#           # Extract the public IPv4 address from the task details
+#           PUBLIC_IP=$(echo "$TASK_DETAILS" | jq -r '.tasks[0].attachments[0].details[] | select(.name=="publicIPv4Address") | .value')
+#           echo "Public IP assigned: $PUBLIC_IP"
+
+#           # Set the public IP as an output variable for this step (if needed later)
+#           echo "::set-output name=public_ip::$PUBLIC_IP"
