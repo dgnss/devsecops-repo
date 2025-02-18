@@ -132,4 +132,4 @@ jobs:
             --launch-type FARGATE \
             --network-configuration "awsvpcConfiguration={subnets=[subnet-090dc98e525d9165a],securityGroups=[sg-0a6a475d4bec5d17a],assignPublicIp=ENABLED}"
 
-#Made changes to github-devsecops-policy three
+#Made changes to github-devsecops-policy
