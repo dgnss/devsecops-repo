@@ -3,7 +3,7 @@ name: Build and Push Docker Images to ECR
 on:
   push:
     branches:
-      - main  # Adjust if you want to trigger on a different branch
+      - master  # Adjust if you want to trigger on a different branch
 
 permissions:
   id-token: write   # Allows the workflow to request an OIDC token for AWS role assumption
