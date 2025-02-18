@@ -111,6 +111,24 @@ jobs:
             echo "ECS_SERVICE_EXISTS=false" >> $GITHUB_ENV
           fi
 
+      # 🟢 Wait for ECS Service to Become Active
+      - name: Wait for ECS Service to Become Active
+        if: env.ECS_SERVICE_EXISTS == 'true'
+        run: |
+          SERVICE_NAME="defectdojo-service"
+          CLUSTER_NAME="defectdojo-cluster"
+
+          echo "Checking if ECS service is ACTIVE..."
+          STATUS=$(aws ecs describe-services --cluster $CLUSTER_NAME --services $SERVICE_NAME --query 'services[0].status' --output text)
+
+          while [ "$STATUS" != "ACTIVE" ]; do
+            echo "Service is not ACTIVE yet (Current status: $STATUS)... Waiting 10s"
+            sleep 10
+            STATUS=$(aws ecs describe-services --cluster $CLUSTER_NAME --services $SERVICE_NAME --query 'services[0].status' --output text)
+          done
+
+          echo "ECS service is now ACTIVE!"
+      
       # 🟢 Update ECS Service If Exists
       - name: Update ECS Service
         if: env.ECS_SERVICE_EXISTS == 'true'
@@ -132,4 +150,4 @@ jobs:
             --launch-type FARGATE \
             --network-configuration "awsvpcConfiguration={subnets=[subnet-090dc98e525d9165a],securityGroups=[sg-0a6a475d4bec5d17a],assignPublicIp=ENABLED}"
 
-#Made changes to github-devsecops-policy 2
+#Made changes to github-devsecops-policy 3
