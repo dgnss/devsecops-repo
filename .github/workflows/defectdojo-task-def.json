@@ -14,7 +14,15 @@
             ],
             "environment": [
                 { "name": "DD_DATABASE_URL", "value": "postgres://defectdojo:password@db:5432/defectdojo" }
-            ]
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                "awslogs-group": "/ecs/defectdojo-task",
+                "awslogs-region": "us-east-1",
+                "awslogs-stream-prefix": "defectdojo"
+                }
+            }
         }
     ],
     "networkMode": "awsvpc",
