@@ -111,6 +111,18 @@ jobs:
             echo "ECS_SERVICE_EXISTS=false" >> $GITHUB_ENV
           fi
 
+      # 🟢 Create ECS Service If It Doesn't Exist
+      - name: Create ECS Service
+        if: env.ECS_SERVICE_EXISTS == 'false'
+        run: |
+          aws ecs create-service \
+            --cluster defectdojo-cluster \
+            --service-name defectdojo-service \
+            --task-definition $TASK_DEF_ARN \
+            --desired-count 1 \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[subnet-090dc98e525d9165a],securityGroups=[sg-0a6a475d4bec5d17a],assignPublicIp=ENABLED}"
+
       # 🟢 Wait for ECS Service to Become Active
       - name: Wait for ECS Service to Become Active
         if: env.ECS_SERVICE_EXISTS == 'true'
@@ -138,16 +150,16 @@ jobs:
             --service defectdojo-service \
             --task-definition $TASK_DEF_ARN
 
-      # 🟢 Create ECS Service If It Doesn't Exist
-      - name: Create ECS Service
-        if: env.ECS_SERVICE_EXISTS == 'false'
-        run: |
-          aws ecs create-service \
-            --cluster defectdojo-cluster \
-            --service-name defectdojo-service \
-            --task-definition $TASK_DEF_ARN \
-            --desired-count 1 \
-            --launch-type FARGATE \
-            --network-configuration "awsvpcConfiguration={subnets=[subnet-090dc98e525d9165a],securityGroups=[sg-0a6a475d4bec5d17a],assignPublicIp=ENABLED}"
+      # # 🟢 Create ECS Service If It Doesn't Exist
+      # - name: Create ECS Service
+      #   if: env.ECS_SERVICE_EXISTS == 'false'
+      #   run: |
+      #     aws ecs create-service \
+      #       --cluster defectdojo-cluster \
+      #       --service-name defectdojo-service \
+      #       --task-definition $TASK_DEF_ARN \
+      #       --desired-count 1 \
+      #       --launch-type FARGATE \
+      #       --network-configuration "awsvpcConfiguration={subnets=[subnet-090dc98e525d9165a],securityGroups=[sg-0a6a475d4bec5d17a],assignPublicIp=ENABLED}"
 
-#Made changes to github-devsecops-policy 4
+#Made changes to github-devsecops-policy 5
