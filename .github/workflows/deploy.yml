@@ -32,7 +32,7 @@ jobs:
 
       - name: Register Task Definition
         run: |
-          aws ecs register-task-definition --cli-input-json file://defectdojo-task-def.json
+          aws ecs register-task-definition --cli-input-json file://.github/workflows/defectdojo-task-def.json
 
       - name: Deploy DefectDojo Service
         run: |
