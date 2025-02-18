@@ -96,16 +96,16 @@ jobs:
           TASK_DEF_ARN=$(aws ecs describe-task-definition --task-definition defectdojo-task --query 'taskDefinition.taskDefinitionArn' --output text)
           echo "TASK_DEF_ARN=$TASK_DEF_ARN" >> $GITHUB_ENV
 
-      # 🟢 Check if ECS Service Exists
+      # 🟢 Check If ECS Service Exists (Ignore Deleted Services)
       - name: Check if ECS Service Exists
         id: check_service
         run: |
           SERVICE_NAME="defectdojo-service"
           CLUSTER_NAME="defectdojo-cluster"
 
-          EXISTS=$(aws ecs describe-services --cluster $CLUSTER_NAME --services $SERVICE_NAME --query 'services[0].serviceName' --output text 2>/dev/null || echo "NONE")
+          STATUS=$(aws ecs describe-services --cluster $CLUSTER_NAME --services $SERVICE_NAME --query 'services[0].status' --output text 2>/dev/null || echo "NONE")
 
-          if [ "$EXISTS" != "NONE" ]; then
+          if [ "$STATUS" == "ACTIVE" ]; then
             echo "ECS_SERVICE_EXISTS=true" >> $GITHUB_ENV
           else
             echo "ECS_SERVICE_EXISTS=false" >> $GITHUB_ENV
@@ -162,4 +162,4 @@ jobs:
       #       --launch-type FARGATE \
       #       --network-configuration "awsvpcConfiguration={subnets=[subnet-090dc98e525d9165a],securityGroups=[sg-0a6a475d4bec5d17a],assignPublicIp=ENABLED}"
 
-#Made changes to github-devsecops-policy 5
+#Made changes to github-devsecops-policy 6
