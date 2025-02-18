@@ -50,3 +50,5 @@ jobs:
           ENI_ID=$(aws ecs describe-tasks --cluster defectdojo-cluster --tasks $TASK_ARN --query "tasks[0].attachments[0].details[?name=='networkInterfaceId'].value" --output text)
           PUBLIC_IP=$(aws ec2 describe-network-interfaces --network-interface-ids $ENI_ID --query "NetworkInterfaces[0].Association.PublicIp" --output text)
           echo "DEFECTDOJO_URL=http://$PUBLIC_IP:8080" >> $GITHUB_ENV
+
+#Made changes to github-devsecops-policy 
