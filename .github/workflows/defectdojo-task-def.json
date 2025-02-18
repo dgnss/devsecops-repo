@@ -19,7 +19,7 @@
     ],
     "networkMode": "awsvpc",
     "requiresCompatibilities": ["FARGATE"],
-    "executionRoleArn": "arn:aws:iam::YOUR_AWS_ACCOUNT_ID:role/ecsTaskExecutionRole",
+    "executionRoleArn": "arn:aws:iam::049789986873:role/ecsTaskExecutionRole",
     "cpu": "512",
     "memory": "1024"
 }
