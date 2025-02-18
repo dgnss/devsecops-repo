@@ -30,25 +30,106 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # - name: Register Task Definition
-      #   run: |
-      #     aws ecs register-task-definition --cli-input-json file://.github/workflows/defectdojo-task-def.json
+      # # - name: Register Task Definition
+      # #   run: |
+      # #     aws ecs register-task-definition --cli-input-json file://.github/workflows/defectdojo-task-def.json
 
-      - name: Deploy DefectDojo Service
+      # - name: Deploy DefectDojo Service
+      #   run: |
+      #     aws ecs create-service \
+      #       --cluster defectdojo-cluster \
+      #       --service-name defectdojo-service \
+      #       --task-definition defectdojo-task:3 \
+      #       --desired-count 1 \
+      #       --launch-type FARGATE \
+      #       --network-configuration "awsvpcConfiguration={subnets=[subnet-090dc98e525d9165a],securityGroups=[sg-0a6a475d4bec5d17a],assignPublicIp=ENABLED}"
+      
+      # # - name: Get DefectDojo Public IP
+      # #   run: |
+      # #     TASK_ARN=$(aws ecs list-tasks --cluster defectdojo-cluster --service defectdojo-service --query "taskArns[0]" --output text)
+      # #     ENI_ID=$(aws ecs describe-tasks --cluster defectdojo-cluster --tasks $TASK_ARN --query "tasks[0].attachments[0].details[?name=='networkInterfaceId'].value" --output text)
+      # #     PUBLIC_IP=$(aws ec2 describe-network-interfaces --network-interface-ids $ENI_ID --query "NetworkInterfaces[0].Association.PublicIp" --output text)
+      # #     echo "DEFECTDOJO_URL=http://$PUBLIC_IP:8080" >> $GITHUB_ENV
+
+      # 🟢 Check if Task Definition Already Exists
+      - name: Check if Task Definition Exists
+        id: check_task_def
+        run: |
+          TASK_FAMILY="defectdojo-task"
+          LATEST_REVISION=$(aws ecs describe-task-definition --task-definition $TASK_FAMILY --query 'taskDefinition.revision' --output text 2>/dev/null || echo "NONE")
+
+          if [ "$LATEST_REVISION" != "NONE" ]; then
+            echo "TASK_EXISTS=true" >> $GITHUB_ENV
+          else
+            echo "TASK_EXISTS=false" >> $GITHUB_ENV
+          fi
+
+      # 🟢 Retrieve Existing Task Definition JSON
+      - name: Get Current Task Definition JSON
+        if: env.TASK_EXISTS == 'true'
+        run: |
+          aws ecs describe-task-definition --task-definition defectdojo-task --query 'taskDefinition' > current-task-def.json
+          jq 'del(.taskDefinitionArn, .status, .revision, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' current-task-def.json > cleaned-task-def.json
+
+      # 🟢 Compare Current vs New Task Definition
+      - name: Compare Task Definitions
+        if: env.TASK_EXISTS == 'true'
+        id: compare_task_def
+        run: |
+          NEW_TASK_DEF="defectdojo-task-def.json"
+          if cmp -s cleaned-task-def.json $NEW_TASK_DEF; then
+            echo "TASK_NEEDS_UPDATE=false" >> $GITHUB_ENV
+          else
+            echo "TASK_NEEDS_UPDATE=true" >> $GITHUB_ENV
+          fi
+
+      # 🟢 Register Task Definition Only If It Has Changed
+      - name: Register New Task Definition
+        if: env.TASK_NEEDS_UPDATE == 'true' || env.TASK_EXISTS == 'false'
+        run: |
+          aws ecs register-task-definition --cli-input-json file://.github/workflows/defectdojo-task-def.json
+
+      # 🟢 Get Latest Task Definition ARN
+      - name: Get Latest Task Definition ARN
+        id: task_def_arn
+        run: |
+          TASK_DEF_ARN=$(aws ecs describe-task-definition --task-definition defectdojo-task --query 'taskDefinition.taskDefinitionArn' --output text)
+          echo "TASK_DEF_ARN=$TASK_DEF_ARN" >> $GITHUB_ENV
+
+      # 🟢 Check if ECS Service Exists
+      - name: Check if ECS Service Exists
+        id: check_service
+        run: |
+          SERVICE_NAME="defectdojo-service"
+          CLUSTER_NAME="defectdojo-cluster"
+
+          EXISTS=$(aws ecs describe-services --cluster $CLUSTER_NAME --services $SERVICE_NAME --query 'services[0].serviceName' --output text 2>/dev/null || echo "NONE")
+
+          if [ "$EXISTS" != "NONE" ]; then
+            echo "ECS_SERVICE_EXISTS=true" >> $GITHUB_ENV
+          else
+            echo "ECS_SERVICE_EXISTS=false" >> $GITHUB_ENV
+          fi
+
+      # 🟢 Update ECS Service If Exists
+      - name: Update ECS Service
+        if: env.ECS_SERVICE_EXISTS == 'true'
+        run: |
+          aws ecs update-service \
+            --cluster defectdojo-cluster \
+            --service defectdojo-service \
+            --task-definition $TASK_DEF_ARN
+
+      # 🟢 Create ECS Service If It Doesn't Exist
+      - name: Create ECS Service
+        if: env.ECS_SERVICE_EXISTS == 'false'
         run: |
           aws ecs create-service \
             --cluster defectdojo-cluster \
             --service-name defectdojo-service \
-            --task-definition defectdojo-task:3 \
+            --task-definition $TASK_DEF_ARN \
             --desired-count 1 \
             --launch-type FARGATE \
             --network-configuration "awsvpcConfiguration={subnets=[subnet-090dc98e525d9165a],securityGroups=[sg-0a6a475d4bec5d17a],assignPublicIp=ENABLED}"
-      
-      # - name: Get DefectDojo Public IP
-      #   run: |
-      #     TASK_ARN=$(aws ecs list-tasks --cluster defectdojo-cluster --service defectdojo-service --query "taskArns[0]" --output text)
-      #     ENI_ID=$(aws ecs describe-tasks --cluster defectdojo-cluster --tasks $TASK_ARN --query "tasks[0].attachments[0].details[?name=='networkInterfaceId'].value" --output text)
-      #     PUBLIC_IP=$(aws ec2 describe-network-interfaces --network-interface-ids $ENI_ID --query "NetworkInterfaces[0].Association.PublicIp" --output text)
-      #     echo "DEFECTDOJO_URL=http://$PUBLIC_IP:8080" >> $GITHUB_ENV
 
 #Made changes to github-devsecops-policy three
