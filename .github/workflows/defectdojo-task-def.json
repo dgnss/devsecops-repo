@@ -8,8 +8,8 @@
             "cpu": 512,
             "portMappings": [
                 {
-                    "containerPort": 8080,
-                    "hostPort": 8080
+                    "containerPort": 3031,
+                    "hostPort": 3031
                 }
             ],
             "environment": [
