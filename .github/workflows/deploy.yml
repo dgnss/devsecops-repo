@@ -59,7 +59,7 @@ jobs:
           -H "Authorization: Token $DEFECTDOJO_API_KEY" \
           -H "Content-Type: multipart/form-data" \
           -F "scan_type=NPM Audit Scan" \
-          -F "file=@audit.json" \
+          -F "file=@bank_app/site/audit.json" \
         env:
           DEFECTDOJO_API_KEY: ${{ secrets.DEFECTDOJO_API_KEY }}
           DEFECTDOJO_URL: ${{ secrets.DEFECTDOJO_URL }}
