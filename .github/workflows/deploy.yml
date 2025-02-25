@@ -55,7 +55,7 @@ jobs:
       # Upload report to DefectDojo - test2
       - name: Upload NPM Audit Scan Report to DefectDojo
         run: |
-          curl -k -X POST "$DEFECTDOJO_URL/api/v2/import-scan/" \
+          curl -k -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
           -H "Authorization: Token $DEFECTDOJO_API_KEY" \
           -H "Content-Type: multipart/form-data" \
           -F "scan_type=NPM Audit v7+ Scan" \
