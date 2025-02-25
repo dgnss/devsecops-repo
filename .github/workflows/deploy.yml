@@ -55,7 +55,7 @@ jobs:
       # Upload report to DefectDojo - test2
       - name: Upload NPM Audit Scan Report to DefectDojo
         run: |
-          ENGAGEMENT_ID="1"
+          ENGAGEMENT_ID=1
           SCAN_TYPE="NPM Audit v7+ Scan"
 
           RESPONSE=$(curl -s -X GET "$DEFECTDOJO_URL/tests/?engagement=$ENGAGEMENT_ID&scan_type=$SCAN_TYPE" \
