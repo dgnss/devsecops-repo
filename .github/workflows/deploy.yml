@@ -60,8 +60,8 @@ jobs:
 
           jq --version
 
-          RESPONSE=$(curl -s -X GET "$API_URL/tests/?engagement=$ENGAGEMENT_ID&scan_type=$SCAN_TYPE" \
-            -H "Authorization: Token $API_KEY")
+          RESPONSE=$(curl -s -X GET "$DEFECTDOJO_URL/tests/?engagement=$ENGAGEMENT_ID&scan_type=$SCAN_TYPE" \
+            -H "Authorization: Token $DEFECTDOJO_API_KEY")
 
           echo "Raw API response: $RESPONSE"
 
