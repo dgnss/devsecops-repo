@@ -58,11 +58,6 @@ jobs:
           ENGAGEMENT_ID=1
           SCAN_TYPE="NPM Audit v7+ Scan"
 
-          RESPONSE=$(curl -s -X GET "$DEFECTDOJO_URL/tests/?engagement=$ENGAGEMENT_ID&scan_type=$SCAN_TYPE" \
-            -H "Authorization: Token $DEFECTDOJO_API_KEY")
-
-          echo "Raw API response: $RESPONSE"
-
           # Check if a test already exists
           TEST_COUNT=$(curl -s -X GET "$DEFECTDOJO_URL/tests/?engagement=$ENGAGEMENT_ID&scan_type=$SCAN_TYPE" \
             -H "Authorization: Token $DEFECTDOJO_API_KEY" | jq '.count')
