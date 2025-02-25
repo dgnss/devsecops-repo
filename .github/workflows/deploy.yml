@@ -62,7 +62,6 @@ jobs:
           -F "product_name=Product1" \
           -F "file=@bank_app/site/audit.json" \
           -F "engagement_name=Continuous Testing" \
-          -F "test_title=ongoing" \
         env:
           DEFECTDOJO_API_KEY: ${{ secrets.DEFECTDOJO_API_KEY }}
           DEFECTDOJO_URL: ${{ secrets.DEFECTDOJO_URL }}
