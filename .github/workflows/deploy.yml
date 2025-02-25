@@ -62,6 +62,8 @@ jobs:
           TEST_COUNT=$(curl -s -X GET "$DEFECTDOJO_URL/tests/?engagement=$ENGAGEMENT_ID&scan_type=$SCAN_TYPE" \
             -H "Authorization: Token $DEFECTDOJO_API_KEY" | jq '.count')
 
+          echo "Parsed TEST_COUNT: '$TEST_COUNT'"
+
           if [ "$TEST_COUNT" -gt 0 ]; then
             echo "Existing scan found, reimporting..."
             ENDPOINT="reimport-scan"
