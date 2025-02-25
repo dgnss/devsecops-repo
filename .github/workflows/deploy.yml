@@ -55,7 +55,7 @@ jobs:
       # Upload report to DefectDojo - test
       - name: Upload NPM Audit Scan Report to DefectDojo
         run: |
-          ENGAGEMENT_ID="1"
+          ENGAGEMENT_ID=1
           SCAN_TYPE="NPM Audit v7+ Scan"
 
           # Check if a test already exists
@@ -73,7 +73,7 @@ jobs:
           curl -k -X POST "$DEFECTDOJO_URL/$ENDPOINT/" \
           -H "Authorization: Token $DEFECTDOJO_API_KEY" \
           -H "Content-Type: multipart/form-data" \
-          -F "scan_type=$SCAN_TYPE"" \
+          -F "scan_type=$SCAN_TYPE" \
           -F "product_name=Product1" \
           -F "file=@bank_app/site/audit.json" \
           -F "engagement_name=Continuous Testing" \
