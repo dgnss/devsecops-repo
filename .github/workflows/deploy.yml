@@ -43,7 +43,7 @@ jobs:
       # NPM Audit and saving file as JSON Report
       - name: Run npm audit and output JSON
         working-directory: bank_app/site
-        run: npm audit --json --audit-level=low | jq 'del(.auditReportVersion)' > audit.json || true
+        run: npm audit --json > audit.json || true
 
       # Report Upload as Github Artifact -- Available in Workflow Summary to Download
       - name: Upload audit report artifact
@@ -58,7 +58,7 @@ jobs:
           curl -k -X POST "$DEFECTDOJO_URL/api/v2/import-scan/" \
           -H "Authorization: Token $DEFECTDOJO_API_KEY" \
           -H "Content-Type: multipart/form-data" \
-          -F "scan_type=NPM Audit Scan" \
+          -F "scan_type=NPM Audit v7+ Scan" \
           -F "product_name=Product1" \
           -F "file=@bank_app/site/audit.json" \
           -F "engagement_name=Continuous Testing" \
