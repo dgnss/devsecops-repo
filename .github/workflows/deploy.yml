@@ -43,7 +43,7 @@ jobs:
       # NPM Audit and saving file as JSON Report
       - name: Run npm audit and output JSON
         working-directory: bank_app/site
-        run: npm audit --json > audit.json || true
+        run: npm audit --json --audit-level=low | jq 'del(.auditReportVersion)' > audit.json || true
 
       # Report Upload as Github Artifact -- Available in Workflow Summary to Download
       - name: Upload audit report artifact
