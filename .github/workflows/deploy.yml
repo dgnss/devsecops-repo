@@ -63,7 +63,7 @@ jobs:
           RESPONSE=$(curl -s -X GET "$API_URL/tests/?engagement=$ENGAGEMENT_ID&scan_type=$SCAN_TYPE" \
             -H "Authorization: Token $API_KEY")
 
-          echo $RESPONSE
+          echo "Raw API response: $RESPONSE"
 
           # Check if a test already exists
           TEST_COUNT=$(curl -s -X GET "$DEFECTDOJO_URL/tests/?engagement=$ENGAGEMENT_ID&scan_type=$SCAN_TYPE" \
