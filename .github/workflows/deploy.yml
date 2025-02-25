@@ -52,7 +52,7 @@ jobs:
           name: npm-audit-report
           path: bank_app/site/audit.json
 
-      # Upload report to DefectDojo - test
+      # Upload report to DefectDojo - test2
       - name: Upload NPM Audit Scan Report to DefectDojo
         run: |
           ENGAGEMENT_ID=1
