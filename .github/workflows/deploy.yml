@@ -58,6 +58,35 @@ jobs:
           ENGAGEMENT_ID=1
           SCAN_TYPE="NPM Audit v7+ Scan"
 
+          RESPONSE=$(curl -s -X GET "$DEFECTDOJO_URL/tests/?engagement=$ENGAGEMENT_ID&scan_type=$SCAN_TYPE" \
+            -H "Authorization: Token $DEFECTDOJO_API_KEY")
+          
+          echo "Raw API response: $RESPONSE"
+
+          # Ensure response is not empty
+          if [ -z "$RESPONSE" ]; then
+            echo "Error: API response is empty!"
+            exit 1
+          fi
+
+          # Validate JSON
+          if ! echo "$RESPONSE" | jq empty; then
+            echo "Error: Invalid JSON response!"
+            exit 1
+          fi
+
+          # Extract test count
+          TEST_COUNT=$(echo "$RESPONSE" | jq -r '.count' 2>/dev/null)
+
+          # Ensure TEST_COUNT is a valid integer
+          if [[ "$TEST_COUNT" =~ ^[0-9]+$ ]] && [ "$TEST_COUNT" -gt 0 ]; then
+            echo "Existing scan found ($TEST_COUNT tests), reimporting..."
+            ENDPOINT="reimport-scan"
+          else
+            echo "No existing scan found, performing first-time import..."
+            ENDPOINT="import-scan"
+          fi
+          
           # Check if a test already exists
           TEST_COUNT=$(curl -s -X GET "$DEFECTDOJO_URL/tests/?engagement=$ENGAGEMENT_ID&scan_type=$SCAN_TYPE" \
             -H "Authorization: Token $DEFECTDOJO_API_KEY" | jq '.count')
