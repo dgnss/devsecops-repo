@@ -18,72 +18,72 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # # Step 2: Configure AWS credentials using STS (assume role via OIDC)
-      # - name: Configure AWS Credentials
-      #   uses: aws-actions/configure-aws-credentials@v4
-      #   with:
-      #     role-to-assume: arn:aws:iam::049789986873:role/github-devsecops
-      #     aws-region: us-east-1
+      # Step 2: Configure AWS credentials using STS (assume role via OIDC)
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::049789986873:role/github-devsecops
+          aws-region: us-east-1
 
-      # ###########################################
-      # # SCA/ Dependency Checking with NPM Audit
-      # ###########################################
+      ###########################################
+      # SCA/ Dependency Checking with NPM Audit
+      ###########################################
 
-      # # Basic Node Setup
-      # - name: Set up Node.js
-      #   uses: actions/setup-node@v4
-      #   with:
-      #     node-version: '20'
+      # Basic Node Setup
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-      # # NPM Setup
-      # - name: Install dependencies
-      #   working-directory: bank_app/site
-      #   run: npm install
+      # NPM Setup
+      - name: Install dependencies
+        working-directory: bank_app/site
+        run: npm install
 
-      # # NPM Audit and saving file as JSON Report
-      # - name: Run npm audit and output JSON
-      #   working-directory: bank_app/site
-      #   run: npm audit --json > audit.json || true
+      # NPM Audit and saving file as JSON Report
+      - name: Run npm audit and output JSON
+        working-directory: bank_app/site
+        run: npm audit --json > audit.json || true
 
-      # # Report Upload as Github Artifact -- Available in Workflow Summary to Download
-      # - name: Upload audit report artifact
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: npm-audit-report
-      #     path: bank_app/site/audit.json
+      # Report Upload as Github Artifact -- Available in Workflow Summary to Download
+      - name: Upload audit report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-report
+          path: bank_app/site/audit.json
 
-      # # Upload report to DefectDojo - test
-      # - name: Upload NPM Audit Scan Report to DefectDojo
-      #   run: |
-      #     ENGAGEMENT_ID=1
-      #     SCAN_TYPE="NPM Audit v7+ Scan"
-      #     ENCODED_SCAN_TYPE=$(echo "NPM Audit v7+ Scan" | jq -sRr @uri)
+      # Upload report to DefectDojo - test
+      - name: Upload NPM Audit Scan Report to DefectDojo
+        run: |
+          ENGAGEMENT_ID=1
+          SCAN_TYPE="NPM Audit v7+ Scan"
+          ENCODED_SCAN_TYPE=$(echo "NPM Audit v7+ Scan" | jq -sRr @uri)
           
-      #     # Check if a test already exists
-      #     TEST_COUNT=$(curl -s -X GET "$DEFECTDOJO_URL/tests/?engagement=$ENGAGEMENT_ID&scan_type=$ENCODED_SCAN_TYPE" \
-      #       -H "Authorization: Token $DEFECTDOJO_API_KEY" | jq '.count')
+          # Check if a test already exists
+          TEST_COUNT=$(curl -s -X GET "$DEFECTDOJO_URL/tests/?engagement=$ENGAGEMENT_ID&scan_type=$ENCODED_SCAN_TYPE" \
+            -H "Authorization: Token $DEFECTDOJO_API_KEY" | jq '.count')
 
-      #     echo "Parsed TEST_COUNT: '$TEST_COUNT'"
+          echo "Parsed TEST_COUNT: '$TEST_COUNT'"
 
-      #     if [ "$TEST_COUNT" -gt 0 ]; then
-      #       echo "Existing scan found, reimporting..."
-      #       ENDPOINT="reimport-scan"
-      #     else
-      #       echo "No existing scan, performing first-time import..."
-      #       ENDPOINT="import-scan"
-      #     fi
+          if [ "$TEST_COUNT" -gt 0 ]; then
+            echo "Existing scan found, reimporting..."
+            ENDPOINT="reimport-scan"
+          else
+            echo "No existing scan, performing first-time import..."
+            ENDPOINT="import-scan"
+          fi
 
-      #     curl -k -X POST "$DEFECTDOJO_URL/$ENDPOINT/" \
-      #     -H "Authorization: Token $DEFECTDOJO_API_KEY" \
-      #     -H "Content-Type: multipart/form-data" \
-      #     -F "scan_type=$SCAN_TYPE" \
-      #     -F "product_name=Product11" \
-      #     -F "file=@bank_app/site/audit.json" \
-      #     -F "engagement_name=Continuous Testing" \
-      #     -F "close_old_findings=true" \
-      #   env:
-      #     DEFECTDOJO_API_KEY: ${{ secrets.DEFECTDOJO_API_KEY }}
-      #     DEFECTDOJO_URL: ${{ secrets.DEFECTDOJO_URL }}
+          curl -k -X POST "$DEFECTDOJO_URL/$ENDPOINT/" \
+          -H "Authorization: Token $DEFECTDOJO_API_KEY" \
+          -H "Content-Type: multipart/form-data" \
+          -F "scan_type=$SCAN_TYPE" \
+          -F "product_name=Product11" \
+          -F "file=@bank_app/site/audit.json" \
+          -F "engagement_name=Continuous Testing" \
+          -F "close_old_findings=true" \
+        env:
+          DEFECTDOJO_API_KEY: ${{ secrets.DEFECTDOJO_API_KEY }}
+          DEFECTDOJO_URL: ${{ secrets.DEFECTDOJO_URL }}
 
       ###########################################
       # SAST with Opengrep
