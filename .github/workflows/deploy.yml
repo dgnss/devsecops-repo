@@ -77,7 +77,7 @@ jobs:
           -H "Authorization: Token $DEFECTDOJO_API_KEY" \
           -H "Content-Type: multipart/form-data" \
           -F "scan_type=$SCAN_TYPE" \
-          -F "product_name=Product11" \
+          -F "product_name=Product1" \
           -F "file=@bank_app/site/audit.json" \
           -F "engagement_name=Continuous Testing" \
           -F "close_old_findings=true" \
