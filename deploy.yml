@@ -1,0 +1,222 @@
+name: Build and Push Docker Images to ECR
+
+on:
+  push:
+    branches:
+      - main  # Adjust if you want to trigger on a different branch
+
+env:
+# Registry/Repository As Required
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+  ECR_REPOSITORY: githubdso/testapp 
+  AWS_REGION: ${{ secrets.AWS_REGION }}    
+  
+permissions:
+  id-token: write   # Allows the workflow to request an OIDC token for AWS role assumption
+  contents: read    # Allows read access to the repository contents
+
+jobs:
+  build_and_push:
+    runs-on: ubuntu-latest #GitHub Provided Runner
+
+    steps:
+      ###########################################
+      # Initial Configuration (Code Checkout | AWS Login | Secrets Scanning)
+      ###########################################
+     
+      # Initial Code Checkout
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: TruffleHog OSS 
+        uses: trufflesecurity/trufflehog@v3.88.12
+        continue-on-error: true 
+        with: 
+          path: ./ 
+          extra_args: --debug
+
+      # Configure AWS credentials using STS (assume role via OIDC)
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-role
+          aws-region: ${{ secrets.AWS_REGION }} 
+
+      # Log in to Amazon ECR
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      
+      ###########################################
+      # SCA/ Dependency Checking with NPM Audit
+      ###########################################
+
+      # Basic Node Setup
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # NPM Setup
+      - name: Install dependencies
+        working-directory: bank_app/site
+        run: npm install
+
+      # NPM Audit and saving file as JSON Report
+      - name: Run npm audit and output JSON
+        working-directory: bank_app/site
+        run: npm audit --json > audit.json || true
+
+      # Report Upload as Github Artifact -- Available in Workflow Summary to Download
+      - name: Upload audit report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-report
+          path: bank_app/site/audit.json
+      
+      ###########################################
+      # SAST with Opengrep
+      ###########################################
+
+      # Downloading Opengrep
+      # TO DO: Change static release to pull release list and get from env latest release of opengrep
+      - name: Install OpenGrep
+        working-directory: bank_app/site
+        run: wget https://github.com/opengrep/opengrep/releases/download/v1.0.0-alpha.14/opengrep_manylinux_x86 
+
+      # Making Runtime Binary Executable
+      - name: Permission Setup OpenGrep
+        working-directory: bank_app/site
+        run: chmod +x ./opengrep_manylinux_x86
+
+      # Executing Binary Against Code Base with Default Rules
+      - name: Run opengrep
+        working-directory: bank_app/site
+        run: ./opengrep_manylinux_x86 scan . --metrics=on --exclude node_modules --json | tee opengrep.json
+
+      # Report Upload as Github Artifact -- Available in Workflow Summary to Download
+      - name: Upload audit report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: opengrep-report
+          path: bank_app/site/opengrep.json
+
+      ###########################################
+      # Provisioning the Image
+      ###########################################
+
+      # Building and Tagging Application Image
+      - name: Build and Push bank_app Image
+        run: |
+          echo "Building bank_app image from bank_app/Dockerfile..."
+          docker build -t testapp:app-latest bank_app
+          echo "Tagging bank_app image..."
+          docker tag testapp:app-latest $ECR_REGISTRY/$ECR_REPOSITORY:app-latest
+
+      - name: Check if bank_db Image Exists in ECR
+        id: check_bank_db
+        run: |
+          echo "Checking if bank_db image exists in ECR..."
+          if aws ecr describe-images --repository-name $ECR_REPOSITORY --image-ids imageTag=db-latest; then
+            echo "bank_db image exists. Skipping build."
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "bank_db image does not exist. Will build image."
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+      # Build and tag bank_db only if it doesn't exist
+      - name: Build and Tag bank_db Image
+        if: steps.check_bank_db.outputs.exists == 'false'
+        run: |
+          echo "Building bank_db image from bank_db/Dockerfile..."
+          docker build -t testapp:db-latest bank_db
+          echo "Tagging bank_db image..."
+          docker tag testapp:db-latest $ECR_REGISTRY/$ECR_REPOSITORY:db-latest
+
+      # If bank_db already exists, pull it so we can scan it locally
+      - name: Pull Existing bank_db Image for Scanning
+        if: steps.check_bank_db.outputs.exists == 'true'
+        run: |
+          echo "Pulling existing bank_db image from ECR for scanning..."
+          docker pull $ECR_REGISTRY/$ECR_REPOSITORY:db-latest
+      
+      ###########################################
+      # Scan images with Aqua Security Trivy
+      ###########################################
+
+      - name: Scan bank_app Image with Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: "${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:app-latest"
+          format: 'json'
+          output: 'trivy-app.json'
+
+      - name: Upload Trivy App container scan results to output
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-app-report
+          path: ./trivy-app.json
+
+      - name: Scan bank_db Image with Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: "${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:db-latest"
+          format: 'json'
+          output: 'trivy-db.json'
+
+      - name: Upload Trivy DB container scan results to output
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-db-report
+          path: ./trivy-db.json
+
+      ###############################
+      # Push (Final Step)
+      ###############################
+
+      # Push the bank_app image to ECR
+      - name: Push bank_app Image to ECR
+        run: |
+          echo "Pushing bank_app image to ECR..."
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:app-latest
+
+      # Push the bank_db image only if it was built (i.e. does not already exist)
+      - name: Push bank_db Image to ECR
+        if: steps.check_bank_db.outputs.exists == 'false'
+        run: |
+          echo "Pushing bank_db image to ECR..."
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:db-latest
+
+      # Step 6: Stop Old Tasks
+      - name: Stop Running ECS Tasks
+        run: |
+          echo "Listing running tasks for family my-app-task..."
+          TASK_ARNS=$(aws ecs list-tasks --cluster github-cloud-newlab --family my-app-task --desired-status RUNNING --query 'taskArns[*]' --output text)
+          if [ -n "$TASK_ARNS" ]; then
+            echo "Stopping tasks: $TASK_ARNS"
+            for TASK in $TASK_ARNS; do
+              aws ecs stop-task --cluster github-cloud-newlab --task "$TASK"
+            done
+          else
+            echo "No running tasks to stop."
+          fi
+          
+       # Step 7: Delete Old Images from Registry
+      - name: Delete Old ECR Images Using Digests
+        run: |
+          echo "Retrieving digests for images tagged as app-latest and db-latest..."
+          KEEP_DIGESTS=$(aws ecr list-images --repository-name githubdso/testapp --filter tagStatus=TAGGED --query 'imageIds[?imageTag==`app-latest` || imageTag==`db-latest`].imageDigest' --output text)
+          echo "Digests to keep: $KEEP_DIGESTS"
+
+          echo "Listing all images in ECR repository githubdso/testapp..."
+          IMAGES_JSON=$(aws ecr list-images --repository-name githubdso/testapp --output json)
+          echo "$IMAGES_JSON" | jq -c '.imageIds[]' | while read image; do
+            DIGEST=$(echo $image | jq -r '.imageDigest')
+            if echo "$KEEP_DIGESTS" | grep -q "$DIGEST"; then
+              echo "Keeping image with digest: $DIGEST"
+            else
+              echo "Deleting image with digest: $DIGEST"
+              aws ecr batch-delete-image --repository-name githubdso/testapp --image-ids imageDigest="$DIGEST"
+            fi
+          done
