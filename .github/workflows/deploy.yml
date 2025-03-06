@@ -281,8 +281,9 @@ jobs:
           curl -k -X POST "$DEFECTDOJO_URL/$APP_ENDPOINT/" \
           -H "Authorization: Token $DEFECTDOJO_API_KEY" \
           -H "Content-Type: multipart/form-data" \
-          -F "scan_type=$APP_SCAN_TYPE" \
+          -F "scan_type=$SCAN_TYPE" \
           -F "product_name=Product1" \
+          -F "title=$APP_TEST_TITLE" \
           -F "file=@trivy-app.json" \
           -F "engagement_name=Continuous Testing" \
           -F "close_old_findings=true"
@@ -291,8 +292,9 @@ jobs:
           curl -k -X POST "$DEFECTDOJO_URL/$DB_ENDPOINT/" \
           -H "Authorization: Token $DEFECTDOJO_API_KEY" \
           -H "Content-Type: multipart/form-data" \
-          -F "scan_type=$DB_SCAN_TYPE" \
+          -F "scan_type=$SCAN_TYPE" \
           -F "product_name=Product1" \
+          -F "title=$DB_TEST_TITLE" \
           -F "file=@trivy-db.json.json" \
           -F "engagement_name=Continuous Testing" \
           -F "close_old_findings=true"
