@@ -245,17 +245,21 @@ jobs:
         run: |
           pwd
           ENGAGEMENT_ID=1
-          APP_SCAN_TYPE="Trivy Scan - App"
-          DB_SCAN_TYPE="Trivy Scan - DB"
-          ENCODED_APP_SCAN_TYPE=$(echo "Trivy Scan - App" | jq -sRr @uri)
-          ENCODED_DB_SCAN_TYPE=$(echo "Trivy Scan - DB" | jq -sRr @uri)
+          SCAN_TYPE="Trivy Scan"
+          
+          # Set test titles to differentiate App and DB
+          APP_TEST_TITLE="Trivy Scan - App"
+          DB_TEST_TITLE="Trivy Scan - DB"
+
+          ENCODED_APP_TEST_TITLE=$(echo "Trivy Scan - App" | jq -sRr @uri)
+          ENCODED_DB_TEST_TITLE=$(echo "Trivy Scan - DB" | jq -sRr @uri)
           
           # Check if App container test exists
-          APP_TEST_COUNT=$(curl -s -X GET "$DEFECTDOJO_URL/tests/?engagement=$ENGAGEMENT_ID&scan_type=$ENCODED_APP_SCAN_TYPE" \
+          APP_TEST_COUNT=$(curl -s -X GET "$DEFECTDOJO_URL/tests/?engagement=$ENGAGEMENT_ID&title=$ENCODED_APP_TEST_TITLE" \
             -H "Authorization: Token $DEFECTDOJO_API_KEY" | jq '.count')
 
           # Check if DB container test exists
-          DB_TEST_COUNT=$(curl -s -X GET "$DEFECTDOJO_URL/tests/?engagement=$ENGAGEMENT_ID&scan_type=$ENCODED_DB_SCAN_TYPE" \
+          DB_TEST_COUNT=$(curl -s -X GET "$DEFECTDOJO_URL/tests/?engagement=$ENGAGEMENT_ID&title=$ENCODED_DB_TEST_TITLE" \
             -H "Authorization: Token $DEFECTDOJO_API_KEY" | jq '.count')
 
           echo "App TEST_COUNT: '$APP_TEST_COUNT'"
