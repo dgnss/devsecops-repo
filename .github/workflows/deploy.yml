@@ -279,7 +279,7 @@ jobs:
           -H "Content-Type: multipart/form-data" \
           -F "scan_type=$APP_SCAN_TYPE" \
           -F "product_name=Product1" \
-          -F "file=@trivy_app_scan.json" \
+          -F "file=@trivy-app.json" \
           -F "engagement_name=Continuous Testing" \
           -F "close_old_findings=true"
 
@@ -289,7 +289,7 @@ jobs:
           -H "Content-Type: multipart/form-data" \
           -F "scan_type=$DB_SCAN_TYPE" \
           -F "product_name=Product1" \
-          -F "file=@trivy_db_scan.json" \
+          -F "file=@trivy-db.json.json" \
           -F "engagement_name=Continuous Testing" \
           -F "close_old_findings=true"
 
