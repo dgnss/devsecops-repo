@@ -220,6 +220,19 @@ jobs:
           image-ref: "${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:db-latest"
           format: 'json'
           output: 'trivy-db.json'
+      - name: listing content
+        run: |
+          echo "pwd"
+          pwd
+          echo "ls"
+          ls
+          echo "ls  -la bank_app/site"
+          ls  -la bank_app/site
+          echo "ls  -la bank_app/"
+          ls  -la bank_app/
+          echo "ls  -la bank_db/"
+          ls  -la bank_db/
+  
 
       - name: Upload Trivy DB container scan results to output
         uses: actions/upload-artifact@v4
