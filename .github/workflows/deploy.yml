@@ -295,7 +295,7 @@ jobs:
           -F "scan_type=$SCAN_TYPE" \
           -F "product_name=Product1" \
           -F "test_title=$DB_TEST_TITLE" \
-          -F "file=@trivy-db.json.json" \
+          -F "file=@trivy-db.json" \
           -F "engagement_name=Continuous Testing" \
           -F "close_old_findings=true"
 
