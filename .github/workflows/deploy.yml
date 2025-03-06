@@ -184,6 +184,10 @@ jobs:
           echo "Tagging bank_db image..."
           docker tag testapp:db-latest $ECR_REGISTRY/$ECR_REPOSITORY:db-latest
           pwd
+          ls
+          ls  -la bank_app/site
+          ls  -la bank_app/
+          ls  -la bank_db/
 
 
       # # If bank_db already exists, pull it so we can scan it locally
