@@ -222,7 +222,7 @@ jobs:
           name: trivy-db-report
           path: ./trivy-db.json
 
-      # Upload Trivy Scan Reports Separately for App & DB
+      # Upload Trivy Scan Reports Separately for App & DB -test
       - name: Upload Trivy Scan Reports Separately
         run: |
           pwd
